@@ -260,7 +260,7 @@ const ArthurCV = () => {
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div>
                 <img 
-                  src="https://placeholder-image-service.onrender.com/image/400x400?prompt=Portrait professionnel d'un jeune étudiant en informatique souriant&id=portrait-arthur-001&customer_id=cus_T4VD2208WwMh0J" 
+                  src="/hwhost.png" 
                   alt="Portrait professionnel d'Arthur CRIERE, étudiant en BTS SIO"
                   className="w-full rounded-lg shadow-lg"
                 />
