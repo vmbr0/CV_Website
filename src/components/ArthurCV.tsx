@@ -1,721 +1,739 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { FormEvent, ReactNode, useEffect, useState } from 'react'
+import {
+  AnimatePresence,
+  motion,
+  useReducedMotion,
+  useScroll,
+  useSpring,
+} from 'framer-motion'
+import hwhost from '../../hwhost.png'
 
-const ArthurCV = () => {
-  const [activeSection, setActiveSection] = useState('accueil');
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+const EASE = [0.22, 1, 0.36, 1] as const
+
+const NAV = [
+  { id: 'accueil', label: 'Accueil' },
+  { id: 'apropos', label: 'À propos' },
+  { id: 'formation', label: 'Formation' },
+  { id: 'competences', label: 'Compétences' },
+  { id: 'projets', label: 'Projets' },
+  { id: 'contact', label: 'Contact' },
+]
+
+const TICKER = [
+  'TCP/IP',
+  'VLAN',
+  'Linux',
+  'Windows Server',
+  'Active Directory',
+  'Wireshark',
+  'Docker',
+  'Python',
+  'Cisco',
+  'Git',
+]
+
+const STUDIES = [
+  {
+    years: '2023 — 2025',
+    title: 'BTS SIO — option SISR',
+    text: "Services Informatiques aux Organisations, spécialité Solutions d'Infrastructure, Systèmes et Réseaux.",
+  },
+  {
+    years: '2020 — 2023',
+    title: 'Baccalauréat général',
+    text: 'Spécialités Mathématiques et Numérique et Sciences Informatiques.',
+  },
+]
+
+const SKILLS = [
+  {
+    title: 'Réseaux',
+    items: ['TCP/IP', 'DNS', 'DHCP', 'VPN', 'LAN / WAN', 'Sécurité réseau'],
+  },
+  {
+    title: 'Systèmes',
+    items: ['Windows Server', 'Linux', 'Active Directory', 'Virtualisation', 'Sauvegarde'],
+  },
+  {
+    title: 'Développement',
+    items: ['HTML / CSS', 'JavaScript', 'Python', 'Bash', 'SQL'],
+  },
+  {
+    title: 'Outils',
+    items: ['Wireshark', 'VMware', 'Packet Tracer', 'Git', 'Docker'],
+  },
+]
+
+const SOCIALS = [
+  { label: 'GitHub', href: 'https://github.com/arthurcriere' },
+  { label: 'LinkedIn', href: 'https://linkedin.com/in/arthurcriere' },
+  { label: 'Twitter', href: 'https://twitter.com/arthurcriere' },
+]
+
+function Chapter({
+  index,
+  kicker,
+  title,
+}: {
+  index: string
+  kicker: string
+  title: string
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 28 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 0.8, ease: EASE }}
+      className="mb-12 md:mb-16"
+    >
+      <p className="text-[11px] uppercase tracking-[0.38em] text-[#e7c27a]">
+        {index}
+        <span className="mx-3 text-white/30">/</span>
+        {kicker}
+      </p>
+      <h2 className="mt-4 font-display text-4xl font-bold leading-[0.95] tracking-tight md:text-6xl">
+        {title}
+      </h2>
+      <motion.div
+        className="mt-6 h-px origin-left bg-gradient-to-r from-[#e7c27a] to-transparent"
+        initial={{ scaleX: 0 }}
+        whileInView={{ scaleX: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1.1, ease: EASE }}
+      />
+    </motion.div>
+  )
+}
+
+function ArthurCV() {
+  const reduce = useReducedMotion()
+  const [intro, setIntro] = useState(true)
+  const [scrolled, setScrolled] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [activeSection, setActiveSection] = useState('accueil')
+  const [sent, setSent] = useState(false)
+  const [nom, setNom] = useState('')
+  const [email, setEmail] = useState('')
+  const [message, setMessage] = useState('')
+  const { scrollYProgress } = useScroll()
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 90,
+    damping: 24,
+    restDelta: 0.001,
+  })
 
   useEffect(() => {
-    const handleScroll = () => {
-      const sections = document.querySelectorAll('section');
-      sections.forEach(section => {
-        const sectionTop = section.offsetTop;
-        if (window.scrollY >= sectionTop - 100) {
-          setActiveSection(section.id);
-        }
-      });
-    };
+    if (reduce) {
+      setIntro(false)
+      return
+    }
+    const timer = window.setTimeout(() => setIntro(false), 1500)
+    return () => window.clearTimeout(timer)
+  }, [reduce])
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  useEffect(() => {
+    const onScroll = () => {
+      setScrolled(window.scrollY > 24)
+      const sections = document.querySelectorAll('section[id]')
+      sections.forEach((section) => {
+        if (window.scrollY >= (section as HTMLElement).offsetTop - 120) {
+          setActiveSection(section.id)
+        }
+      })
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : ''
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [menuOpen])
 
   const scrollToSection = (sectionId: string) => {
-    const section = document.getElementById(sectionId);
-    if (section) {
-      section.scrollIntoView({ behavior: 'smooth' });
-      setIsMenuOpen(false);
-    }
-  };
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' })
+    setMenuOpen(false)
+  }
 
-  const fadeIn = {
-    hidden: { opacity: 0, y: 40 },
-    visible: { 
-      opacity: 1, 
-      y: 0, 
-      transition: { 
-        duration: 0.8,
-        ease: "easeOut"
-      }
-    }
-  };
+  const submitMessage = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setSent(true)
+  }
 
-  const staggerContainer = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const slideInFromLeft = {
-    hidden: { opacity: 0, x: -50 },
-    visible: { 
-      opacity: 1, 
-      x: 0, 
-      transition: { 
-        duration: 0.7,
-        ease: "easeOut"
-      }
-    }
-  };
-
-  const slideInFromRight = {
-    hidden: { opacity: 0, x: 50 },
-    visible: { 
-      opacity: 1, 
-      x: 0, 
-      transition: { 
-        duration: 0.7,
-        ease: "easeOut"
-      }
-    }
-  };
-
-  const scaleUp = {
-    hidden: { opacity: 0, scale: 0.8 },
-    visible: { 
-      opacity: 1, 
-      scale: 1, 
-      transition: { 
-        duration: 0.6,
-        ease: "easeOut"
-      }
-    }
-  };
+  const heroDelay = reduce ? 0 : 1.15
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans">
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-background/90 backdrop-blur-sm border-b border-border z-50">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
+    <div className="min-h-screen bg-[#070708] text-[#f6f3ec]">
+      <motion.div
+        className="fixed left-0 right-0 top-0 z-[90] h-[2px] origin-left bg-[#e7c27a]"
+        style={{ scaleX }}
+      />
+
+      <div className="grain" aria-hidden="true" />
+
+      <AnimatePresence>
+        {intro && (
+          <motion.div
+            key="intro"
+            className="fixed inset-0 z-[80] flex items-center justify-center"
+            initial="show"
+            animate="show"
+            exit="hide"
+            variants={{
+              show: {},
+              hide: { transition: { duration: 1.05, ease: EASE } },
+            }}
+          >
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-xl font-bold text-primary flex items-center"
+              className="absolute inset-x-0 top-0 h-1/2 bg-[#070708]"
+              variants={{ show: { y: 0 }, hide: { y: '-100%' } }}
+              transition={{ duration: 1.05, ease: EASE }}
+            />
+            <motion.div
+              className="absolute inset-x-0 bottom-0 h-1/2 bg-[#070708]"
+              variants={{ show: { y: 0 }, hide: { y: '100%' } }}
+              transition={{ duration: 1.05, ease: EASE }}
+            />
+            <motion.p
+              variants={{
+                show: { opacity: 1, letterSpacing: '0.55em' },
+                hide: { opacity: 0, y: -12 },
+              }}
+              initial={{ opacity: 0, letterSpacing: '0.2em' }}
+              animate={{ opacity: 1, letterSpacing: '0.55em' }}
+              className="relative z-10 font-display text-sm font-bold text-[#e7c27a]"
             >
-              <span className="mr-2">👨‍💻</span>
-              Arthur CRIERE
-            </motion.div>
+              AC
+            </motion.p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-            {/* Desktop Navigation */}
-            <motion.div 
-              className="hidden md:flex space-x-6"
-              variants={staggerContainer}
-              initial="hidden"
-              animate="visible"
-            >
-              {['accueil', 'apropos', 'formation', 'competences', 'projets', 'contact'].map((item, index) => (
-                <motion.button
-                  key={item}
-                  variants={slideInFromRight}
-                  onClick={() => scrollToSection(item)}
-                  className={`px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 ${
-                    activeSection === item
-                      ? 'text-primary bg-primary/10 shadow-lg'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                  }`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {item.charAt(0).toUpperCase() + item.slice(1)}
-                </motion.button>
-              ))}
-            </motion.div>
+      <header
+        className={`fixed inset-x-0 top-0 z-50 transition-colors duration-500 ${
+          scrolled || menuOpen
+            ? 'border-b border-white/10 bg-[#070708]/80 backdrop-blur-xl'
+            : 'bg-transparent'
+        }`}
+      >
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 md:h-20 md:px-8">
+          <button
+            type="button"
+            onClick={() => scrollToSection('accueil')}
+            className="font-display text-sm font-bold tracking-[0.28em]"
+          >
+            AC
+          </button>
 
-            {/* Mobile Menu Button */}
+          <nav className="hidden items-center gap-7 md:flex">
+            {NAV.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => scrollToSection(item.id)}
+                className={`text-[13px] tracking-wide transition-colors ${
+                  activeSection === item.id
+                    ? 'text-[#e7c27a]'
+                    : 'text-[#f6f3ec]/70 hover:text-[#f6f3ec]'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-4">
+            <span className="hidden items-center gap-2 text-[11px] uppercase tracking-[0.28em] text-[#f6f3ec]/60 sm:flex">
+              <span className="pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-[#e7c27a]" />
+              Disponible
+            </span>
             <button
-              className="md:hidden p-2"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              type="button"
+              className="md:hidden"
+              aria-expanded={menuOpen}
+              aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+              onClick={() => setMenuOpen((open) => !open)}
             >
-              <div className="w-6 h-6 flex flex-col justify-center space-y-1">
-                <span className={`block h-0.5 w-6 bg-foreground transition-transform ${isMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`} />
-                <span className={`block h-0.5 w-6 bg-foreground opacity-100 transition-opacity ${isMenuOpen ? 'opacity-0' : ''}`} />
-                <span className={`block h-0.5 w-6 bg-foreground transition-transform ${isMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`} />
-              </div>
+              <span className="block h-px w-6 bg-[#f6f3ec]" />
+              <span className={`mt-1.5 block h-px bg-[#f6f3ec] transition-all ${menuOpen ? 'w-4' : 'w-6'}`} />
             </button>
           </div>
+        </div>
 
-          {/* Mobile Navigation */}
-          <AnimatePresence>
-            {isMenuOpen && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-                className="md:hidden mt-4 space-y-2 overflow-hidden"
-              >
-                {['accueil', 'apropos', 'formation', 'competences', 'projets', 'contact'].map((item, index) => (
+        <AnimatePresence>
+          {menuOpen && (
+            <motion.nav
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.35, ease: EASE }}
+              className="overflow-hidden border-t border-white/10 bg-[#070708] md:hidden"
+            >
+              <div className="flex flex-col px-5 py-4">
+                {NAV.map((item, index) => (
                   <motion.button
-                    key={item}
-                    initial={{ opacity: 0, x: -20 }}
+                    key={item.id}
+                    type="button"
+                    initial={{ opacity: 0, x: -16 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    onClick={() => scrollToSection(item)}
-                    className={`block w-full px-4 py-3 text-left rounded-lg transition-all duration-300 ${
-                      activeSection === item
-                        ? 'text-primary bg-primary/10 shadow-md'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                    }`}
+                    transition={{ delay: index * 0.04 }}
+                    onClick={() => scrollToSection(item.id)}
+                    className="border-b border-white/5 py-4 text-left font-display text-3xl"
                   >
-                    {item.charAt(0).toUpperCase() + item.slice(1)}
+                    {item.label}
                   </motion.button>
                 ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </nav>
+              </div>
+            </motion.nav>
+          )}
+        </AnimatePresence>
+      </header>
 
-      {/* Hero Section */}
-      <section id="accueil" className="min-h-screen flex items-center justify-center pt-20 pb-16 px-6">
-        <div className="container mx-auto text-center">
-          <motion.div
-            variants={fadeIn}
-            initial="hidden"
-            animate="visible"
-            className="max-w-4xl mx-auto"
-          >
-            <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ 
-                duration: 0.8, 
-                delay: 0.3,
-                type: "spring",
-                stiffness: 100
-              }}
-              className="w-40 h-40 mx-auto mb-8 rounded-full bg-gradient-to-br from-primary via-primary/80 to-primary/60 flex items-center justify-center shadow-2xl"
-              whileHover={{ 
-                scale: 1.05,
-                rotate: 5,
-                transition: { duration: 0.3 }
-              }}
-            >
-              <span className="text-5xl text-white font-bold">AC</span>
-            </motion.div>
-            
-            <motion.h1
-              variants={fadeIn}
-              className="text-4xl md:text-6xl font-bold mb-6"
-            >
-              Arthur <span className="text-primary">CRIERE</span>
-            </motion.h1>
-            
+      <main>
+        <section
+          id="accueil"
+          className="relative flex min-h-screen items-end overflow-hidden px-5 pb-16 pt-28 md:px-8"
+          onMouseMove={(event) => {
+            const bounds = event.currentTarget.getBoundingClientRect()
+            event.currentTarget.style.setProperty('--mx', `${event.clientX - bounds.left}px`)
+            event.currentTarget.style.setProperty('--my', `${event.clientY - bounds.top}px`)
+          }}
+        >
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(520px circle at var(--mx, 70%) var(--my, 30%), rgba(231,194,122,0.16), transparent 42%)',
+            }}
+          />
+          {!reduce && (
+            <>
+              <motion.div
+                className="pointer-events-none absolute -left-24 top-24 h-72 w-72 rounded-full bg-[#e7c27a]/10 blur-3xl"
+                animate={{ y: [0, -24, 0], x: [0, 16, 0] }}
+                transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <motion.div
+                className="pointer-events-none absolute bottom-10 right-0 h-80 w-80 rounded-full bg-[#7ee0d6]/10 blur-3xl"
+                animate={{ y: [0, 20, 0] }}
+                transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
+              />
+            </>
+          )}
+          <div className="pointer-events-none absolute inset-8 hidden border border-white/10 md:block" />
+
+          <div className="relative z-10 mx-auto w-full max-w-6xl">
             <motion.p
-              variants={fadeIn}
-              className="text-xl md:text-2xl text-muted-foreground mb-8"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: heroDelay, duration: 0.7, ease: EASE }}
+              className="text-[11px] uppercase tracking-[0.42em] text-[#e7c27a]"
             >
-              Étudiant en BTS SIO - Administration Réseau
+              01 — BTS SIO · SISR
             </motion.p>
-            
-            <motion.div
-              variants={fadeIn}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
-            >
-              <motion.button
-                onClick={() => scrollToSection('contact')}
-                className="px-8 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors shadow-lg"
-                whileHover={{ 
-                  scale: 1.05,
-                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.2)"
-                }}
-                whileTap={{ scale: 0.95 }}
-              >
-                📧 Me contacter
-              </motion.button>
-              <motion.button
-                onClick={() => scrollToSection('competences')}
-                className="px-8 py-3 border border-border rounded-lg hover:bg-muted transition-colors"
-                whileHover={{ 
-                  scale: 1.05,
-                  backgroundColor: "rgba(0, 0, 0, 0.05)"
-                }}
-                whileTap={{ scale: 0.95 }}
-              >
-                💻 Mes compétences
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
 
-      {/* About Section */}
-      <section id="apropos" className="py-20 px-6 bg-muted/30">
-        <div className="container mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="max-w-4xl mx-auto"
-          >
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">À Propos de Moi</h2>
-            
-            <div className="grid md:grid-cols-2 gap-8 items-center">
-              <div>
-                <img 
-                  src="/hwhost.png" 
-                  alt="Portrait professionnel d'Arthur CRIERE, étudiant en BTS SIO"
-                  className="w-full rounded-lg shadow-lg"
-                />
-              </div>
-              
-              <div className="space-y-6">
-                <p className="text-lg">
-                  Passionné par l'informatique et les technologies réseau, je suis actuellement étudiant en 
-                  BTS Services Informatiques aux Organisations option Solutions d'Infrastructure, Systèmes et Réseaux.
-                </p>
-                
-                <p className="text-lg">
-                  Mon objectif est de devenir administrateur réseau et de contribuer à la construction 
-                  d'infrastructures informatiques robustes et sécurisées.
-                </p>
-                
-                <motion.div 
-                  className="grid grid-cols-2 gap-4"
-                  variants={staggerContainer}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
+            <h1 className="mt-6 max-w-full font-display text-[clamp(2.35rem,11vw,7.5rem)] font-extrabold leading-[0.86] tracking-[-0.045em]">
+              {['ARTHUR', 'CRIERE'].map((line, index) => (
+                <span key={line} className="block overflow-hidden">
+                  <motion.span
+                    className={`block ${index === 1 ? 'text-[#e7c27a]' : ''}`}
+                    initial={{ y: '110%' }}
+                    animate={{ y: '0%' }}
+                    transition={{ delay: heroDelay + index * 0.12, duration: 1.05, ease: EASE }}
+                  >
+                    {line}
+                  </motion.span>
+                </span>
+              ))}
+            </h1>
+
+            <div className="mt-8 flex flex-col gap-8 md:mt-10 md:flex-row md:items-end md:justify-between">
+              <motion.p
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: heroDelay + 0.28, duration: 0.8, ease: EASE }}
+                className="max-w-md text-lg font-light leading-relaxed text-[#f6f3ec]/75 md:text-xl"
+              >
+                Étudiant en administration réseau. Infrastructures sobres, solides, et tenues dans le temps.
+              </motion.p>
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: heroDelay + 0.4, duration: 0.8, ease: EASE }}
+                className="flex flex-wrap gap-3"
+              >
+                <button
+                  type="button"
+                  onClick={() => scrollToSection('contact')}
+                  className="bg-[#e7c27a] px-6 py-3 text-sm font-medium text-[#14110c] transition-transform hover:-translate-y-0.5"
                 >
-                  <motion.div 
-                    variants={scaleUp}
-                    className="p-4 bg-background rounded-lg text-center shadow-lg border border-border/50"
-                    whileHover={{ 
-                      scale: 1.02,
-                      boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)"
-                    }}
-                  >
-                    <div className="text-2xl font-bold text-primary">🎓 BTS SIO</div>
-                    <div className="text-sm text-muted-foreground">En cours</div>
-                  </motion.div>
-                  <motion.div 
-                    variants={scaleUp}
-                    className="p-4 bg-background rounded-lg text-center shadow-lg border border-border/50"
-                    whileHover={{ 
-                      scale: 1.02,
-                      boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)"
-                    }}
-                  >
-                    <div className="text-2xl font-bold text-primary">🌐 Réseau</div>
-                    <div className="text-sm text-muted-foreground">Spécialisation</div>
-                  </motion.div>
-                </motion.div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Formation Section */}
-      <section id="formation" className="py-20 px-6">
-        <div className="container mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="max-w-4xl mx-auto"
-          >
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Formation</h2>
-            
-            <div className="space-y-8">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="p-6 bg-muted/50 rounded-lg border-l-4 border-primary"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-xl font-semibold">BTS SIO - Option SISR</h3>
-                  <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">2023 - 2025</span>
-                </div>
-                <p className="text-muted-foreground">
-                  Brevet de Technicien Supérieur Services Informatiques aux Organisations, 
-                  spécialité Solutions d'Infrastructure, Systèmes et Réseaux.
-                </p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                className="p-6 bg-muted/50 rounded-lg border-l-4 border-green-500"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-xl font-semibold">Baccalauréat Général</h3>
-                  <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">2020 - 2023</span>
-                </div>
-                <p className="text-muted-foreground">
-                  Baccalauréat général avec spécialités Mathématiques et Numérique et Sciences Informatiques.
-                </p>
+                  Me contacter
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollToSection('projets')}
+                  className="border border-white/20 px-6 py-3 text-sm text-[#f6f3ec] transition-colors hover:border-[#e7c27a] hover:text-[#e7c27a]"
+                >
+                  Voir les projets
+                </button>
               </motion.div>
             </div>
-          </motion.div>
+          </div>
+        </section>
+
+        <div className="overflow-hidden border-y border-white/10 bg-[#0c0c10]">
+          <div className="ticker-track gap-10 py-4">
+            {[...TICKER, ...TICKER].map((item, index) => (
+              <span
+                key={`${item}-${index}`}
+                className="flex items-center gap-10 text-[11px] uppercase tracking-[0.35em] text-[#f6f3ec]/55"
+              >
+                {item}
+                <span className="text-[#e7c27a]">✦</span>
+              </span>
+            ))}
+          </div>
         </div>
-      </section>
 
-      {/* Compétences Section */}
-      <section id="competences" className="py-20 px-6 bg-muted/30">
-        <div className="container mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="max-w-4xl mx-auto"
-          >
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Compétences Techniques</h2>
-            
-            <div className="grid md:grid-cols-2 gap-8">
-              {/* Réseau */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="p-6 bg-background rounded-lg shadow-sm"
-              >
-                <h3 className="text-xl font-semibold mb-4 text-primary">Réseaux</h3>
-                <div className="space-y-3">
-                  {['TCP/IP', 'DNS', 'DHCP', 'VPN', 'LAN/WAN', 'Sécurité réseau'].map((skill, index) => (
-                    <div key={skill} className="flex items-center">
-                      <div className="w-2 h-2 bg-primary rounded-full mr-3" />
-                      <span>{skill}</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-
-              {/* Systèmes */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="p-6 bg-background rounded-lg shadow-sm"
-              >
-                <h3 className="text-xl font-semibold mb-4 text-emerald-400">Systèmes</h3>
-                <div className="space-y-3">
-                  {['Windows Server', 'Linux', 'Active Directory', 'Virtualisation', 'Backup'].map((skill, index) => (
-                    <div key={skill} className="flex items-center">
-                      <div className="w-2 h-2 bg-emerald-400 rounded-full mr-3" />
-                      <span>{skill}</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-
-              {/* Développement */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                className="p-6 bg-background rounded-lg shadow-sm"
-              >
-                <h3 className="text-xl font-semibold mb-4 text-cyan-400">Développement</h3>
-                <div className="space-y-3">
-                  {['HTML/CSS', 'JavaScript', 'Python', 'Bash', 'SQL'].map((skill, index) => (
-                    <div key={skill} className="flex items-center">
-                      <div className="w-2 h-2 bg-cyan-400 rounded-full mr-3" />
-                      <span>{skill}</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-
-              {/* Outils */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.6 }}
-                className="p-6 bg-background rounded-lg shadow-sm"
-              >
-                <h3 className="text-xl font-semibold mb-4 text-pink-400">Outils</h3>
-                <div className="space-y-3">
-                  {['Wireshark', 'VMware', 'Cisco Packet Tracer', 'Git', 'Docker'].map((skill, index) => (
-                    <div key={skill} className="flex items-center">
-                      <div className="w-2 h-2 bg-pink-400 rounded-full mr-3" />
-                      <span>{skill}</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Projets Section */}
-      <section id="projets" className="py-20 px-6">
-        <div className="container mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="max-w-4xl mx-auto"
-          >
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Projets & Expériences</h2>
-            
-            <div className="grid md:grid-cols-2 gap-8">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="bg-background rounded-lg overflow-hidden shadow-sm border"
-              >
-                <img 
-                  src="https://placeholder-image-service.onrender.com/image/400x200?prompt=Réseau informatique avec serveurs et câblage structuré&id=projet-reseau-001&customer_id=cus_T4VD2208WwMh0J" 
-                  alt="Configuration d'un réseau local avec serveurs et équipements Cisco"
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold mb-2">Configuration Réseau Entreprise</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Mise en place d'une infrastructure réseau complète avec VLAN, sécurité et monitoring.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-2 py-1 bg-primary/10 text-primary rounded text-sm">Cisco</span>
-                    <span className="px-2 py-1 bg-primary/10 text-primary rounded text-sm">VLAN</span>
-                    <span className="px-2 py-1 bg-primary/10 text-primary rounded text-sm">Sécurité</span>
-                  </div>
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="bg-background rounded-lg overflow-hidden shadow-sm border"
-              >
-                <img 
-                  src="https://placeholder-image-service.onrender.com/image/400x200?prompt=Serveur Linux avec terminal et interface d'administration&id=projet-linux-001&customer_id=cus_T4VD2208WwMh0J" 
-                  alt="Serveur Linux Ubuntu avec interface de ligne de commande et outils d'administration"
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold mb-2">Administration Serveur Linux</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Configuration et maintenance d'un serveur Ubuntu avec services web et base de données.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded text-sm">Ubuntu</span>
-                    <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-sm">Apache</span>
-                    <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">MySQL</span>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Contact Section */}
-      <section id="contact" className="py-20 px-6 bg-muted/30">
-        <div className="container mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="max-w-4xl mx-auto"
-          >
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Contact</h2>
-            
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold">Me contacter</h3>
-                <p className="text-muted-foreground">
-                  N'hésitez pas à me contacter pour discuter de projets ou d'opportunités dans le domaine de l'administration réseau.
-                </p>
-                
-                <div className="space-y-4">
-                  <motion.div 
-                    className="flex items-center p-3 rounded-lg hover:bg-muted/50 transition-colors"
-                    whileHover={{ x: 5 }}
-                  >
-                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-4">
-                      <span className="text-primary text-lg">📧</span>
-                    </div>
-                    <div>
-                      <div className="font-semibold">Email</div>
-                      <div className="text-muted-foreground">arthur.criere@email.com</div>
-                    </div>
-                  </motion.div>
-                  
-                  <motion.div 
-                    className="flex items-center p-3 rounded-lg hover:bg-muted/50 transition-colors"
-                    whileHover={{ x: 5 }}
-                  >
-                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-4">
-                      <span className="text-primary text-lg">📱</span>
-                    </div>
-                    <div>
-                      <div className="font-semibold">Téléphone</div>
-                      <div className="text-muted-foreground">+33 6 12 34 56 78</div>
-                    </div>
-                  </motion.div>
-                  
-                  <motion.div 
-                    className="flex items-center p-3 rounded-lg hover:bg-muted/50 transition-colors"
-                    whileHover={{ x: 5 }}
-                  >
-                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-4">
-                      <span className="text-primary text-lg">📍</span>
-                    </div>
-                    <div>
-                      <div className="font-semibold">Localisation</div>
-                      <div className="text-muted-foreground">Paris, France</div>
-                    </div>
-                  </motion.div>
-
-                  {/* Liens sociaux */}
-                  <motion.div 
-                    className="flex space-x-4 pt-4"
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.4 }}
-                  >
-                    <motion.a
-                      href="https://github.com/arthurcriere"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center hover:bg-primary/20 transition-colors"
-                      whileHover={{ scale: 1.1, rotate: 5 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      <span className="text-primary">🐱</span>
-                    </motion.a>
-                    <motion.a
-                      href="https://linkedin.com/in/arthurcriere"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center hover:bg-primary/20 transition-colors"
-                      whileHover={{ scale: 1.1, rotate: 5 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      <span className="text-primary">💼</span>
-                    </motion.a>
-                    <motion.a
-                      href="https://twitter.com/arthurcriere"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center hover:bg-primary/20 transition-colors"
-                      whileHover={{ scale: 1.1, rotate: 5 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      <span className="text-primary">🐦</span>
-                    </motion.a>
-                  </motion.div>
-                </div>
-              </div>
-              
-              <div className="bg-background p-6 rounded-lg shadow-sm">
-                <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Nom</label>
-                    <input 
-                      type="text" 
-                      className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                      placeholder="Votre nom"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Email</label>
-                    <input 
-                      type="email" 
-                      className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                      placeholder="votre@email.com"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Message</label>
-                    <textarea 
-                      rows={4}
-                      className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                      placeholder="Votre message..."
-                      required
-                    />
-                  </div>
-                  
-                  <button
-                    type="submit"
-                    className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-                    onClick={() => alert('Formulaire soumis ! En production, cela enverrait un email.')}
-                  >
-                    Envoyer le message
-                  </button>
-                </form>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-muted py-12 px-6 border-t border-border">
-        <div className="container mx-auto">
-          <motion.div 
-            className="text-center text-muted-foreground"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <p className="text-lg mb-4">© 2024 Arthur CRIERE. Tous droits réservés.</p>
-            <p className="text-sm mb-6">Développé avec React, TypeScript et Tailwind CSS</p>
-            
-            <motion.div 
-              className="flex justify-center space-x-6"
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
+        <section id="apropos" className="mx-auto max-w-6xl px-5 py-24 md:px-8 md:py-32">
+          <Chapter index="02" kicker="Profil" title="À propos" />
+          <div className="grid items-start gap-12 md:grid-cols-12">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.8, ease: EASE }}
+              className="md:col-span-5"
             >
-              <motion.a
-                href="https://github.com/arthurcriere"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-primary transition-colors"
-                variants={scaleUp}
-                whileHover={{ scale: 1.1 }}
-              >
-                GitHub
-              </motion.a>
-              <motion.a
-                href="https://linkedin.com/in/arthurcriere"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-primary transition-colors"
-                variants={scaleUp}
-                whileHover={{ scale: 1.1 }}
-              >
-                LinkedIn
-              </motion.a>
+              <div className="relative flex min-h-[320px] flex-col justify-between border border-white/10 bg-[#101014] p-8">
+                <p className="text-[11px] uppercase tracking-[0.32em] text-[#f6f3ec]/40">Paris</p>
+                <p className="font-display text-7xl font-extrabold leading-none text-[#e7c27a] md:text-8xl">AC</p>
+                <p className="max-w-[14rem] text-sm leading-relaxed text-[#f6f3ec]/60">
+                  Administration réseau, systèmes et infrastructures.
+                </p>
+              </div>
             </motion.div>
-          </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.8, delay: 0.1, ease: EASE }}
+              className="space-y-6 md:col-span-7 md:pt-4"
+            >
+              <p className="font-display text-3xl font-semibold leading-tight md:text-4xl">
+                Construire des réseaux que l’on peut expliquer, surveiller et faire durer.
+              </p>
+              <p className="text-lg leading-relaxed text-[#f6f3ec]/70">
+                Passionné par l’informatique et les technologies réseau, je suis étudiant en BTS Services
+                Informatiques aux Organisations, option Solutions d’Infrastructure, Systèmes et Réseaux.
+              </p>
+              <p className="text-lg leading-relaxed text-[#f6f3ec]/70">
+                Mon objectif est de devenir administrateur réseau et de contribuer à des infrastructures
+                robustes et sécurisées.
+              </p>
+              <div className="grid grid-cols-3 gap-4 border-t border-white/10 pt-6">
+                {[
+                  ['BTS SIO', 'En cours'],
+                  ['SISR', 'Spécialité'],
+                  ['Paris', 'France'],
+                ].map(([label, detail]) => (
+                  <div key={label}>
+                    <p className="font-display text-lg font-bold md:text-2xl">{label}</p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[#f6f3ec]/45">{detail}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        <section id="formation" className="border-y border-white/10 bg-[#0c0c10]">
+          <div className="mx-auto max-w-6xl px-5 py-24 md:px-8 md:py-32">
+            <Chapter index="03" kicker="Parcours" title="Formation" />
+            <div className="relative space-y-6 md:pl-8">
+              <div className="absolute bottom-0 left-0 top-0 hidden w-px bg-white/10 md:block" />
+              {STUDIES.map((study, index) => (
+                <motion.article
+                  key={study.title}
+                  initial={{ opacity: 0, x: -24 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, margin: '-40px' }}
+                  transition={{ duration: 0.7, delay: index * 0.08, ease: EASE }}
+                  className="relative border border-white/10 bg-[#070708] p-6 md:ml-8 md:p-8"
+                >
+                  <span className="absolute -left-[2.4rem] top-8 hidden h-2.5 w-2.5 rounded-full bg-[#e7c27a] md:block" />
+                  <p className="text-[11px] uppercase tracking-[0.32em] text-[#e7c27a]">{study.years}</p>
+                  <h3 className="mt-3 font-display text-2xl font-bold">{study.title}</h3>
+                  <p className="mt-3 max-w-2xl leading-relaxed text-[#f6f3ec]/70">{study.text}</p>
+                </motion.article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="competences" className="mx-auto max-w-6xl px-5 py-24 md:px-8 md:py-32">
+          <Chapter index="04" kicker="Savoir-faire" title="Compétences" />
+          <div className="grid gap-4 md:grid-cols-2">
+            {SKILLS.map((group, groupIndex) => (
+              <motion.article
+                key={group.title}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.7, delay: groupIndex * 0.06, ease: EASE }}
+                className="border border-white/10 p-6 md:p-8"
+              >
+                <h3 className="font-display text-2xl font-bold">{group.title}</h3>
+                <ul className="mt-6 space-y-3">
+                  {group.items.map((item) => (
+                    <li key={item} className="flex items-center justify-between border-b border-white/5 pb-3 text-sm">
+                      <span>{item}</span>
+                      <span className="h-px w-8 bg-[#e7c27a]/70" />
+                    </li>
+                  ))}
+                </ul>
+              </motion.article>
+            ))}
+          </div>
+        </section>
+
+        <section id="projets" className="border-t border-white/10 bg-[#0c0c10]">
+          <div className="mx-auto max-w-6xl px-5 py-24 md:px-8 md:py-32">
+            <Chapter index="05" kicker="Sélection" title="Projets" />
+            <div className="grid gap-5 lg:grid-cols-3">
+              <ProjectCard
+                num="01"
+                title="Réseau d’entreprise"
+                text="Infrastructure complète : VLAN, sécurité et monitoring."
+                tags={['Cisco', 'VLAN', 'Sécurité']}
+              >
+                <div className="relative h-44 overflow-hidden bg-[#10141c]">
+                  <div className="absolute inset-0 bg-[linear-gradient(rgba(231,194,122,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(231,194,122,0.15)_1px,transparent_1px)] bg-[size:28px_28px]" />
+                  <span className="absolute left-6 top-8 h-2 w-2 rounded-full bg-[#e7c27a]" />
+                  <span className="absolute left-20 top-16 h-2 w-2 rounded-full bg-[#7ee0d6]" />
+                  <span className="absolute left-36 top-10 h-2 w-2 rounded-full bg-[#f6f3ec]" />
+                  <span className="absolute left-6 top-9 h-px w-32 origin-left rotate-[18deg] bg-[#e7c27a]/50" />
+                </div>
+              </ProjectCard>
+              <ProjectCard
+                num="02"
+                title="Serveur Linux"
+                text="Ubuntu en production locale : services web et base de données."
+                tags={['Ubuntu', 'Apache', 'MySQL']}
+              >
+                <div className="h-44 bg-[#0b0d10] p-5 font-mono text-[12px] leading-6 text-[#b7f0c2]">
+                  <p className="text-[#f6f3ec]/40">ubuntu — bash</p>
+                  <p>$ systemctl status apache2</p>
+                  <p className="text-[#e7c27a]">active (running)</p>
+                  <p>$ mysqladmin ping</p>
+                  <p>mysqld is alive</p>
+                </div>
+              </ProjectCard>
+              <ProjectCard
+                num="03"
+                title="HwHost"
+                text="Présidence de l’association : bénévoles, présence en ligne et produits digitaux."
+                tags={['Association', 'Produit', 'Réseau']}
+              >
+                <div className="flex h-44 items-center justify-center bg-[#140a22] p-6">
+                  <img src={hwhost} alt="" className="max-h-full w-full object-contain" />
+                </div>
+              </ProjectCard>
+            </div>
+          </div>
+        </section>
+
+        <section id="contact" className="mx-auto max-w-6xl px-5 py-24 md:px-8 md:py-32">
+          <Chapter index="06" kicker="Écrire" title="Contact" />
+          <div className="grid gap-12 md:grid-cols-2">
+            <div>
+              <p className="max-w-md text-lg leading-relaxed text-[#f6f3ec]/70">
+                Pour un stage, une alternance ou un échange sur l’administration réseau.
+              </p>
+              <dl className="mt-8 space-y-5">
+                {[
+                  ['Email', 'arthur.criere@email.com'],
+                  ['Téléphone', '+33 6 12 34 56 78'],
+                  ['Ville', 'Paris, France'],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <dt className="text-[11px] uppercase tracking-[0.28em] text-[#e7c27a]">{label}</dt>
+                    <dd className="mt-1 text-lg">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              <div className="mt-8 flex gap-5">
+                {SOCIALS.map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-[#f6f3ec]/70 underline-offset-4 hover:text-[#e7c27a] hover:underline"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            <div className="border border-white/10 bg-[#0c0c10] p-6 md:p-8">
+              <AnimatePresence mode="wait">
+                {sent ? (
+                  <motion.div
+                    key="sent"
+                    role="status"
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.45, ease: EASE }}
+                    className="flex min-h-[320px] flex-col justify-between"
+                  >
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.32em] text-[#e7c27a]">Message noté</p>
+                      <p className="mt-4 font-display text-4xl font-bold leading-tight">
+                        Merci{nom.trim() ? `, ${nom.trim()}` : ''}.
+                      </p>
+                      <p className="mt-4 leading-relaxed text-[#f6f3ec]/70">
+                        En production, ce message partirait par email. Ici, il reste sur la page.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNom('')
+                        setEmail('')
+                        setMessage('')
+                        setSent(false)
+                      }}
+                      className="mt-8 self-start border border-white/20 px-5 py-2 text-sm hover:border-[#e7c27a]"
+                    >
+                      Écrire un autre message
+                    </button>
+                  </motion.div>
+                ) : (
+                  <motion.form
+                    key="form"
+                    className="space-y-5"
+                    onSubmit={submitMessage}
+                    exit={{ opacity: 0, y: -8 }}
+                  >
+                    <Field id="nom" label="Nom" value={nom} onChange={setNom} placeholder="Votre nom" />
+                    <Field
+                      id="email"
+                      label="Email"
+                      type="email"
+                      value={email}
+                      onChange={setEmail}
+                      placeholder="vous@email.com"
+                    />
+                    <label className="block text-sm" htmlFor="message">
+                      Message
+                      <textarea
+                        id="message"
+                        required
+                        rows={4}
+                        value={message}
+                        onChange={(event) => setMessage(event.target.value)}
+                        placeholder="Votre message"
+                        className="mt-2 w-full resize-none border border-white/10 bg-[#121216] px-4 py-3 text-[#f6f3ec] outline-none placeholder:text-[#8d877c] focus:border-[#e7c27a]"
+                      />
+                    </label>
+                    <button
+                      type="submit"
+                      className="w-full bg-[#e7c27a] py-3 text-sm font-medium text-[#14110c] transition-transform hover:-translate-y-0.5"
+                    >
+                      Envoyer le message
+                    </button>
+                  </motion.form>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-white/10 px-5 py-8 md:px-8">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 text-sm text-[#f6f3ec]/50 sm:flex-row sm:items-center sm:justify-between">
+          <p>© 2024 Arthur CRIERE</p>
+          <p>React, TypeScript, Tailwind</p>
         </div>
       </footer>
     </div>
-  );
-};
+  )
+}
 
-export default ArthurCV;
+function Field({
+  id,
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = 'text',
+}: {
+  id: string
+  label: string
+  value: string
+  onChange: (value: string) => void
+  placeholder: string
+  type?: string
+}) {
+  return (
+    <label className="block text-sm" htmlFor={id}>
+      {label}
+      <input
+        id={id}
+        type={type}
+        required
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="mt-2 w-full border border-white/10 bg-[#121216] px-4 py-3 text-[#f6f3ec] outline-none placeholder:text-[#8d877c] focus:border-[#e7c27a]"
+      />
+    </label>
+  )
+}
+
+function ProjectCard({
+  num,
+  title,
+  text,
+  tags,
+  children,
+}: {
+  num: string
+  title: string
+  text: string
+  tags: string[]
+  children: ReactNode
+}) {
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 28 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.7, ease: EASE }}
+      whileHover={{ y: -6 }}
+      className="group overflow-hidden border border-white/10 bg-[#070708]"
+    >
+      <div className="overflow-hidden">{children}</div>
+      <div className="p-6">
+        <p className="text-[11px] tracking-[0.32em] text-[#e7c27a]">{num}</p>
+        <h3 className="mt-2 font-display text-2xl font-bold">{title}</h3>
+        <p className="mt-3 text-sm leading-relaxed text-[#f6f3ec]/70">{text}</p>
+        <div className="mt-5 flex flex-wrap gap-2">
+          {tags.map((tag) => (
+            <span key={tag} className="border border-white/10 px-2 py-1 text-[11px] uppercase tracking-[0.16em] text-[#f6f3ec]/70">
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
+    </motion.article>
+  )
+}
+
+export default ArthurCV
