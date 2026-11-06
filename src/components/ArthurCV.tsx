@@ -3,6 +3,7 @@ import {
   AnimatePresence,
   motion,
   useReducedMotion,
+  useInView,
   useScroll,
   useSpring,
   useTransform,
@@ -128,6 +129,7 @@ function ArthurCV() {
   const [nom, setNom] = useState('')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
+  const parisTime = useParisTime()
 
   const { scrollYProgress } = useScroll()
   const scaleX = useSpring(scrollYProgress, { stiffness: 90, damping: 24, restDelta: 0.001 })
@@ -251,7 +253,7 @@ function ArthurCV() {
               <div className="flex justify-center gap-1 overflow-hidden">
                 {'ARTHUR'.split('').map((letter, index) => (
                   <motion.span
-                    key={letter}
+                    key={`${letter}-${index}`}
                     initial={{ y: index % 2 ? 28 : -28, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     variants={{ hide: { opacity: 0, y: -12 } }}
@@ -445,7 +447,11 @@ function ArthurCV() {
                     </div>
                   </div>
                 </div>
-                <div className="mt-6 grid grid-cols-3 gap-3 border-t border-white/10 pt-5 text-center">
+                <p className="mt-5 font-mono text-sm tracking-[0.22em] text-[#e7c27a]" aria-label="Heure à Paris">
+                  {parisTime}
+                  <span className="ml-3 text-[10px] uppercase tracking-[0.22em] text-[#f6f3ec]/40">Paris</span>
+                </p>
+                <div className="mt-4 grid grid-cols-3 gap-3 border-t border-white/10 pt-5 text-center">
                   {[
                     ['BTS', 'SIO'],
                     ['SISR', 'Option'],
@@ -597,10 +603,16 @@ function ArthurCV() {
                   <p className="font-display text-5xl font-extrabold tracking-tight md:text-7xl">{activeSkill.title}</p>
                   <p className="mt-4 text-lg text-[#f6f3ec]/70">{activeSkill.line}</p>
                   <ul className="mt-8 grid gap-3 sm:grid-cols-2">
-                    {activeSkill.items.map((item) => (
-                      <li key={item} className="border border-white/10 px-4 py-3 text-sm">
+                    {activeSkill.items.map((item, index) => (
+                      <motion.li
+                        key={item}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05, duration: 0.35, ease: EASE }}
+                        className="border border-white/10 px-4 py-3 text-sm"
+                      >
                         {item}
-                      </li>
+                      </motion.li>
                     ))}
                   </ul>
                 </motion.div>
@@ -766,47 +778,108 @@ const PROJECTS = [
   },
 ] as const
 
+const TERMINAL_SCRIPT = [
+  '$ systemctl is-active apache2',
+  'active',
+  '$ mysqladmin ping',
+  'mysqld is alive',
+].join('\n')
+
 function ProjectVisual({ kind }: { kind: (typeof PROJECTS)[number]['kind'] }) {
+  if (kind === 'term') return <LiveTerminal />
+  if (kind === 'logo') return <LogoStage />
+  return <NetworkStage />
+}
+
+function LiveTerminal() {
   const reduce = useReducedMotion()
-  if (kind === 'term') {
-    return (
-      <div className="h-56 overflow-hidden border border-white/10 bg-[#0b0d10] p-6 font-mono text-sm leading-7 text-[#b7f0c2] md:h-80">
-        <p className="text-[#f6f3ec]/40">ubuntu — bash</p>
-        <p>$ systemctl status apache2</p>
-        <p className="text-[#e7c27a]">active (running)</p>
-        <p>$ mysqladmin ping</p>
-        <p>mysqld is alive</p>
-      </div>
-    )
-  }
-  if (kind === 'logo') {
-    return (
-      <div className="flex h-56 items-center justify-center border border-white/10 bg-[#140a22] p-8 md:h-80">
-        <img src={hwhost} alt="Logo HwHost" className="max-h-full w-full object-contain" />
-      </div>
-    )
-  }
+  const ref = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { amount: 0.45 })
+  const [count, setCount] = useState(reduce ? TERMINAL_SCRIPT.length : 0)
+
+  useEffect(() => {
+    if (reduce) {
+      setCount(TERMINAL_SCRIPT.length)
+      return
+    }
+    if (!inView) return
+    const finished = count >= TERMINAL_SCRIPT.length
+    const timer = window.setTimeout(() => {
+      setCount((current) => (current >= TERMINAL_SCRIPT.length ? 0 : current + 1))
+    }, finished ? 1400 : 32)
+    return () => window.clearTimeout(timer)
+  }, [count, inView, reduce])
+
+  const shown = TERMINAL_SCRIPT.slice(0, reduce ? TERMINAL_SCRIPT.length : count)
+
   return (
-    <div className="relative h-56 overflow-hidden border border-white/10 bg-[#10141c] md:h-80">
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(231,194,122,0.16)_1px,transparent_1px),linear-gradient(90deg,rgba(231,194,122,0.16)_1px,transparent_1px)] bg-[size:32px_32px]" />
-      {!reduce && <PulseDot className="left-[18%] top-[30%]" delay={0} />}
-      <span className="absolute left-[18%] top-[30%] h-2.5 w-2.5 rounded-full bg-[#e7c27a]" />
-      <span className="absolute left-[46%] top-[58%] h-2.5 w-2.5 rounded-full bg-[#7ee0d6]" />
-      <span className="absolute left-[70%] top-[28%] h-2.5 w-2.5 rounded-full bg-[#f6f3ec]" />
-      <span className="absolute left-[20%] top-[34%] h-px w-[28%] origin-left rotate-[22deg] bg-[#e7c27a]/60" />
-      <span className="absolute left-[48%] top-[56%] h-px w-[22%] origin-left -rotate-[28deg] bg-[#7ee0d6]/60" />
+    <div ref={ref} className="h-56 overflow-hidden border border-white/10 bg-[#0b0d10] p-6 font-mono text-sm leading-7 md:h-80">
+      <p className="text-[#f6f3ec]/40">ubuntu — bash</p>
+      {shown.split('\n').map((line, index, lines) => (
+        <p key={`${index}-${line}`} className={line.startsWith('$') ? 'text-[#d7f5df]' : 'text-[#e7c27a]'}>
+          {line || '\u00a0'}
+          {index === lines.length - 1 && (
+            <span className="caret ml-1 inline-block h-4 w-2 translate-y-0.5 bg-[#e7c27a]" />
+          )}
+        </p>
+      ))}
     </div>
   )
 }
 
-function PulseDot({ className, delay }: { className: string; delay: number }) {
+function NetworkStage() {
   return (
-    <motion.span
-      className={`absolute h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#e7c27a]/50 ${className}`}
-      animate={{ scale: [0.6, 1.6], opacity: [0.7, 0] }}
-      transition={{ duration: 2.4, repeat: Infinity, delay, ease: 'easeOut' }}
-    />
+    <div className="relative h-56 overflow-hidden border border-white/10 bg-[#10141c] md:h-80">
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(231,194,122,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(231,194,122,0.12)_1px,transparent_1px)] bg-[size:32px_32px]" />
+      <svg viewBox="0 0 480 320" className="absolute inset-0 h-full w-full" aria-hidden="true">
+        <path className="flow" d="M70 80 H230 V230 H410" fill="none" stroke="#e7c27a" strokeWidth="1.5" />
+        <path className="flow" d="M230 80 H410 V160" fill="none" stroke="#7ee0d6" strokeWidth="1.5" />
+        <circle cx="70" cy="80" r="7" fill="#e7c27a" />
+        <circle cx="230" cy="80" r="7" fill="#f6f3ec" />
+        <circle cx="230" cy="230" r="7" fill="#7ee0d6" />
+        <circle cx="410" cy="230" r="7" fill="#e7c27a" />
+        <circle cx="410" cy="160" r="7" fill="#7ee0d6" />
+        <text x="84" y="68" fill="#f6f3ec" fontSize="13">Core</text>
+        <text x="244" y="68" fill="#f6f3ec" fontSize="13">VLAN 10</text>
+        <text x="244" y="254" fill="#f6f3ec" fontSize="13">VLAN 20</text>
+        <text x="350" y="254" fill="#f6f3ec" fontSize="13">WAN</text>
+      </svg>
+    </div>
   )
+}
+
+function LogoStage() {
+  const reduce = useReducedMotion()
+  return (
+    <div className="relative flex h-56 items-center justify-center overflow-hidden border border-white/10 bg-[#140a22] p-8 md:h-80">
+      <div className="sweep" aria-hidden="true" />
+      <motion.img
+        src={hwhost}
+        alt="Logo HwHost"
+        className="relative max-h-full w-full object-contain"
+        animate={reduce ? undefined : { y: [0, -8, 0] }}
+        transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut' }}
+      />
+    </div>
+  )
+}
+
+function useParisTime() {
+  const format = () =>
+    new Intl.DateTimeFormat('fr-FR', {
+      timeZone: 'Europe/Paris',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }).format(new Date())
+  const [time, setTime] = useState(format)
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setTime(format()), 1000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  return time
 }
 
 function Field({

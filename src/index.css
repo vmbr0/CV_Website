@@ -32,6 +32,7 @@
   }
 
   html {
+    position: relative;
     scroll-behavior: smooth;
   }
 
@@ -110,6 +111,15 @@
   animation: orbit 18s linear infinite;
 }
 
+.flow {
+  stroke-dasharray: 6 8;
+  animation: flow 1.4s linear infinite;
+}
+
+.caret {
+  animation: caret 1s steps(1) infinite;
+}
+
 section[id] {
   scroll-margin-top: 5.5rem;
 }
@@ -134,6 +144,14 @@ section[id] {
   to { transform: rotate(360deg); }
 }
 
+@keyframes flow {
+  to { stroke-dashoffset: -56; }
+}
+
+@keyframes caret {
+  50% { opacity: 0; }
+}
+
 @media (pointer: coarse) {
   .cursor-glow {
     display: none;
@@ -149,6 +167,8 @@ section[id] {
   .pulse-dot,
   .sweep::after,
   .orbit,
+  .flow,
+  .caret,
   .cursor-glow {
     animation: none;
   }
