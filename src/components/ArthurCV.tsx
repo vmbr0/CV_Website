@@ -129,6 +129,7 @@ function ArthurCV() {
   const [nom, setNom] = useState('')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
+  const [copied, setCopied] = useState<string | null>(null)
   const parisTime = useParisTime()
 
   const { scrollYProgress } = useScroll()
@@ -192,6 +193,27 @@ function ArthurCV() {
   const submitMessage = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setSent(true)
+  }
+
+  const copyValue = async (label: string, value: string) => {
+    let ok = false
+    try {
+      await navigator.clipboard.writeText(value)
+      ok = true
+    } catch {
+      const area = document.createElement('textarea')
+      area.value = value
+      area.setAttribute('readonly', '')
+      area.style.position = 'fixed'
+      area.style.left = '-9999px'
+      document.body.appendChild(area)
+      area.select()
+      ok = document.execCommand('copy')
+      area.remove()
+    }
+    if (!ok) return
+    setCopied(label)
+    window.setTimeout(() => setCopied((current) => (current === label ? null : current)), 2500)
   }
 
   const trackPointer = (event: MouseEvent<HTMLDivElement>) => {
@@ -659,13 +681,30 @@ function ArthurCV() {
               </p>
               <dl className="mt-8 space-y-5">
                 {[
-                  ['Email', 'arthur.criere@email.com'],
-                  ['Téléphone', '+33 6 12 34 56 78'],
-                  ['Ville', 'Paris, France'],
-                ].map(([label, value]) => (
-                  <div key={label}>
-                    <dt className="text-[11px] uppercase tracking-[0.28em] text-[#e7c27a]">{label}</dt>
-                    <dd className="mt-1 text-lg">{value}</dd>
+                  { label: 'Email', value: 'arthur.criere@email.com', href: 'mailto:arthur.criere@email.com' },
+                  { label: 'Téléphone', value: '+33 6 12 34 56 78', href: 'tel:+33612345678' },
+                  { label: 'Ville', value: 'Paris, France', href: '' },
+                ].map((item) => (
+                  <div key={item.label}>
+                    <dt className="text-[11px] uppercase tracking-[0.28em] text-[#e7c27a]">{item.label}</dt>
+                    <dd className="mt-1 flex flex-wrap items-center gap-3 text-lg">
+                      {item.href ? (
+                        <a href={item.href} className="hover:text-[#e7c27a]">
+                          {item.value}
+                        </a>
+                      ) : (
+                        item.value
+                      )}
+                      {item.href && (
+                        <button
+                          type="button"
+                          onClick={() => copyValue(item.label, item.value)}
+                          className="border border-white/15 px-2 py-1 text-[11px] uppercase tracking-[0.16em] text-[#f6f3ec]/70 hover:border-[#e7c27a] hover:text-[#e7c27a]"
+                        >
+                          {copied === item.label ? 'Copié' : 'Copier'}
+                        </button>
+                      )}
+                    </dd>
                   </div>
                 ))}
               </dl>
@@ -746,7 +785,7 @@ function ArthurCV() {
 
       <footer className="border-t border-white/10 px-5 py-8 md:px-8">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 text-sm text-[#f6f3ec]/50 sm:flex-row sm:items-center sm:justify-between">
-          <p>© 2024 Arthur CRIERE</p>
+          <p>© {new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', year: 'numeric' }).format(new Date())} Arthur CRIERE</p>
           <p>React, TypeScript, Tailwind</p>
         </div>
       </footer>
