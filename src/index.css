@@ -4,66 +4,180 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 262.1 83.3% 57.8%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --background: 240 6% 3%;
+    --foreground: 40 33% 95%;
+    --card: 240 6% 7%;
+    --card-foreground: 40 33% 95%;
+    --popover: 240 6% 5%;
+    --popover-foreground: 40 33% 95%;
+    --primary: 38 68% 69%;
+    --primary-foreground: 240 8% 6%;
+    --secondary: 240 5% 12%;
+    --secondary-foreground: 40 33% 95%;
+    --muted: 240 4% 12%;
+    --muted-foreground: 36 10% 68%;
+    --accent: 38 40% 18%;
+    --accent-foreground: 40 33% 95%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 262.1 83.3% 57.8%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --radius: 0.5rem;
+    --border: 240 5% 16%;
+    --input: 240 5% 12%;
+    --ring: 38 68% 69%;
+    --radius: 0.75rem;
+    color-scheme: dark;
   }
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-  }
-}
-
-@layer base {
   * {
     @apply border-border;
   }
+
+  html {
+    position: relative;
+    scroll-behavior: smooth;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    background-color: #070708;
+  }
+
+  ::selection {
+    background: #e7c27a;
+    color: #14110c;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #070708;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3a342c;
+  border-radius: 99px;
+}
+
+.grain {
+  pointer-events: none;
+  position: fixed;
+  inset: -20%;
+  z-index: 40;
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/></svg>");
+}
+
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker 32s linear infinite;
+}
+
+.pulse-dot {
+  animation: pingdot 2.4s ease-out infinite;
+}
+
+.cursor-glow {
+  position: fixed;
+  z-index: 30;
+  width: 34rem;
+  height: 34rem;
+  left: var(--cx, 70%);
+  top: var(--cy, 30%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(231, 194, 122, 0.16), transparent 62%);
+}
+
+.sweep {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sweep::after {
+  content: "";
+  position: absolute;
+  inset: -20% -40%;
+  background: linear-gradient(105deg, transparent 40%, rgba(246, 243, 236, 0.07) 50%, transparent 60%);
+  animation: sweep 8s ease-in-out infinite;
+}
+
+.orbit {
+  animation: orbit 18s linear infinite;
+}
+
+.flow {
+  stroke-dasharray: 6 8;
+  animation: flow 1.4s linear infinite;
+}
+
+.caret {
+  animation: caret 1s steps(1) infinite;
+}
+
+section[id] {
+  scroll-margin-top: 5.5rem;
+}
+
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes pingdot {
+  0% { box-shadow: 0 0 0 0 rgba(231, 194, 122, 0.55); }
+  70% { box-shadow: 0 0 0 8px rgba(231, 194, 122, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(231, 194, 122, 0); }
+}
+
+@keyframes sweep {
+  0%, 35% { transform: translateX(-30%); }
+  70%, 100% { transform: translateX(30%); }
+}
+
+@keyframes orbit {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes flow {
+  to { stroke-dashoffset: -56; }
+}
+
+@keyframes caret {
+  50% { opacity: 0; }
+}
+
+@media (pointer: coarse) {
+  .cursor-glow {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .ticker-track,
+  .pulse-dot,
+  .sweep::after,
+  .orbit,
+  .flow,
+  .caret,
+  .cursor-glow {
+    animation: none;
+  }
+
+  .cursor-glow {
+    display: none;
+  }
+
+  .grain {
+    display: none;
   }
 }
